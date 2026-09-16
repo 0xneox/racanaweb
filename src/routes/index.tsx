@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDown, ArrowRight, Check, ChevronDown, Menu, X } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
@@ -9,8 +9,20 @@ export const Route = createFileRoute("/")({
     { property: "og:title", content: "Racana — Your manuscript in. Your finished book out." },
     { property: "og:description", content: "Professional book interior typesetting for independent authors. Preview free, then create your print-ready PDF for $29." },
     { property: "og:type", content: "website" },
+    { property: "og:url", content: "/" },
     { name: "twitter:card", content: "summary_large_image" },
-  ] }), component: Index,
+  ], links: [{ rel: "canonical", href: "/" }], scripts: [{
+    type: "application/ld+json",
+    children: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      name: "Racana",
+      applicationCategory: "DesignApplication",
+      operatingSystem: "Web",
+      description: "Book interior typesetting for independent authors.",
+      offers: { "@type": "Offer", price: "29", priceCurrency: "USD" },
+    }),
+  }] }), component: Index,
 });
 
 const bookStyles = [
@@ -35,15 +47,30 @@ function PrimaryLink({ children }: { children: ReactNode }) {
 
 function Header() {
   const [open, setOpen] = useState(false);
-  return <header className="absolute inset-x-0 top-0 z-50 border-b border-foreground/10 bg-background/90 backdrop-blur-md">
+  return <header className="absolute inset-x-0 top-0 z-50 border-b border-foreground/10 bg-background/95 backdrop-blur-md">
     <div className="mx-auto flex h-18 max-w-[1440px] items-center justify-between px-5 md:px-10 lg:px-16">
-      <a href="#top" className="font-serif text-2xl font-semibold tracking-[0.14em]">RACANA</a>
+      <a href="#top" className="font-serif text-xl font-black tracking-[0.24em]">RACANA</a>
       <nav className="hidden items-center gap-8 text-sm font-medium md:flex"><a href="#how">How it works</a><a href="#styles">Templates</a><a href="#pricing">Pricing</a></nav>
       <div className="hidden items-center gap-5 md:flex"><a className="text-sm font-medium" href="/auth/sign-in">Sign in</a><a className="rounded-sm border border-primary px-4 py-2.5 text-sm font-semibold text-primary transition-colors hover:bg-primary hover:text-primary-foreground" href="/upload">Start a book</a></div>
       <button className="grid size-11 place-items-center md:hidden" onClick={() => setOpen((v) => !v)} aria-label={open ? "Close menu" : "Open menu"}>{open ? <X className="size-5" /> : <Menu className="size-5" />}</button>
     </div>
     {open && <nav className="border-t border-border bg-background px-5 py-5 md:hidden"><div className="flex flex-col">{[["How it works", "#how"], ["Templates", "#styles"], ["Pricing", "#pricing"], ["Sign in", "/auth/sign-in"]].map(([label, href]) => <a key={label} href={href} onClick={() => setOpen(false)} className="border-b border-border py-3">{label}</a>)}<a href="/upload" className="mt-4 rounded-sm bg-primary px-5 py-3 text-center text-sm font-semibold text-primary-foreground">Start a book</a></div></nav>}
   </header>;
+}
+
+function MobileAction() {
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const target = document.querySelector("#hero-action");
+    if (!target) return;
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (entry) setVisible(!entry.isIntersecting);
+    }, { threshold: 0.2 });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, []);
+  return <a href="/upload" aria-hidden={!visible} className={`fixed inset-x-4 bottom-4 z-40 flex min-h-14 items-center justify-between rounded-sm bg-primary px-5 text-sm font-bold text-primary-foreground shadow-lift transition-all duration-300 md:hidden ${visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-20 opacity-0"}`}><span>Start with your manuscript</span><ArrowRight className="size-4" /></a>;
 }
 
 function ManuscriptPage({ finished = false, compact = false }: { finished?: boolean; compact?: boolean }) {
@@ -53,10 +80,10 @@ function ManuscriptPage({ finished = false, compact = false }: { finished?: bool
 }
 
 function Index() {
-  return <main id="top" className="page-grain overflow-hidden"><Header />
-    <section className="border-b border-border pt-32 lg:min-h-[760px] lg:pt-40"><div className="mx-auto grid max-w-[1440px] gap-16 px-5 pb-20 md:px-10 lg:grid-cols-[0.86fr_1.14fr] lg:items-center lg:px-16"><div className="reveal max-w-xl"><p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">Book interior typesetting</p><h1 className="font-serif text-[clamp(3.3rem,6vw,6.3rem)] font-medium leading-[0.88]">Your manuscript in.<br /><span className="italic text-primary">Your finished book out.</span></h1><p className="mt-8 max-w-lg text-base leading-7 text-muted-foreground sm:text-lg">Upload your DOCX or PDF, choose a book style, and Racana turns it into a professionally typeset interior ready for print.</p><div className="mt-8 flex flex-col items-start gap-5 sm:flex-row sm:items-center"><PrimaryLink>Start with your manuscript</PrimaryLink><a href="#how" className="inline-flex items-center gap-2 text-sm font-semibold">See how it works <ArrowDown className="size-4" /></a></div><p className="mt-7 text-xs leading-6 text-muted-foreground">No design software. No margin calculations.<br />No typesetting experience required.</p></div><div className="reveal reveal-delay grid grid-cols-[1fr_28px_1fr] items-center gap-2 sm:grid-cols-[1fr_52px_1fr] sm:gap-5"><div><p className="mb-4 text-center text-[9px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">Your manuscript</p><ManuscriptPage /></div><div className="flex"><span className="h-px flex-1 bg-rule" /><ArrowRight className="size-5 text-primary" /></div><div className="translate-y-6"><p className="mb-4 text-center text-[9px] font-semibold uppercase tracking-[0.2em] text-primary">Racana interior</p><ManuscriptPage finished /></div></div></div></section>
+  return <main id="top" className="mobile-safe page-grain overflow-hidden"><a href="#content" className="fixed left-3 top-3 z-[100] -translate-y-24 bg-foreground px-4 py-3 text-xs font-bold text-background focus:translate-y-0">Skip to content</a><Header />
+    <section id="content" className="border-b border-border pt-28 lg:min-h-[850px] lg:pt-32"><div className="mx-auto max-w-[1440px] px-5 pb-20 md:px-10 lg:px-16"><div className="reveal flex items-center justify-between border-b border-foreground/15 pb-4 text-[9px] font-bold uppercase tracking-[0.28em]"><span>The 2-Minute Book Interior Publisher</span><span className="hidden text-muted-foreground sm:block">Racana Studio · Est. 2026</span></div><div className="reveal overflow-hidden border-b border-foreground/15 py-4 sm:py-6"><p aria-hidden="true" className="font-serif text-[clamp(4.6rem,14.2vw,13rem)] font-black leading-[0.72] tracking-[-0.045em]">RACANA</p></div><div className="grid gap-14 pt-10 lg:grid-cols-12 lg:items-end"><div className="reveal lg:col-span-5"><p className="mb-6 text-[10px] font-extrabold uppercase tracking-[0.28em] text-primary">Book interior typesetting / 01</p><h1 className="font-serif text-[clamp(3rem,5vw,5.5rem)] font-medium leading-[0.92]">Your manuscript in.<br /><span className="italic text-primary">Your finished book out.</span></h1><p className="mt-7 max-w-lg border-l border-foreground pl-6 text-base font-light leading-7 text-muted-foreground">Upload your DOCX or PDF, choose a book style, and Racana turns it into a professionally typeset interior ready for print.</p><div id="hero-action" className="mt-8 flex flex-col items-start gap-5 sm:flex-row sm:items-center"><PrimaryLink>Start with your manuscript</PrimaryLink><a href="#how" className="inline-flex items-center gap-2 text-sm font-semibold underline decoration-border">See how it works <ArrowDown className="size-4" /></a></div><p className="mt-7 text-[11px] leading-6 text-muted-foreground">Free preview · $29 per finished interior · No subscription</p></div><div className="reveal reveal-delay grid grid-cols-[1fr_28px_1fr] items-center gap-2 sm:grid-cols-[1fr_52px_1fr] sm:gap-5 lg:col-span-7"><div><p className="mb-4 text-center text-[8px] font-bold uppercase tracking-[0.26em] text-muted-foreground">Your manuscript</p><ManuscriptPage /></div><div className="flex"><span className="h-px flex-1 bg-rule" /><ArrowRight className="size-5 text-primary" /></div><div className="page-breathe translate-y-6"><p className="mb-4 text-center text-[8px] font-bold uppercase tracking-[0.26em] text-primary">Racana interior</p><ManuscriptPage finished /></div></div></div></div></section>
     <section className="border-b border-border bg-paper-deep/60 py-7"><div className="mx-auto flex max-w-[1440px] flex-wrap justify-center gap-x-10 gap-y-4 px-5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground lg:justify-between lg:px-16"><span className="text-primary">Built for print</span>{["Precise trim sizes", "Professional typography", "Chapter-aware layout", "Print-ready PDF", "Automated quality checks"].map((x) => <span key={x}>{x}</span>)}</div></section>
-    <section id="how" className="px-5 py-24 md:px-10 md:py-32 lg:px-16"><div className="mx-auto max-w-[1312px]"><p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-primary">The process</p><h2 className="mt-4 font-serif text-5xl font-medium sm:text-6xl">Three steps. That's it.</h2><div className="mt-16 grid border-y border-border md:grid-cols-3">{[["01", "Upload", "Give us your manuscript.", "DOCX or PDF. Your words stay exactly as you wrote them."], ["02", "Choose", "Choose the visual language of your book.", "Classic, Modern, Philosophy, Academic, or Literary."], ["03", "Download", "Receive the finished interior.", "Racana typesets every page and prepares the final PDF for print."]].map(([n,t,b,s],i) => <article key={n} className={`py-10 md:px-9 md:py-12 ${i ? "border-t border-border md:border-l md:border-t-0" : ""}`}><span className="font-serif text-xl italic text-primary">{n}</span><h3 className="mt-8 font-serif text-4xl">{t}</h3><p className="mt-5 font-medium">{b}</p><p className="mt-2 max-w-xs text-sm leading-6 text-muted-foreground">{s}</p></article>)}</div><p className="mt-7 text-sm text-muted-foreground">The whole process usually takes about two minutes.</p></div></section>
+    <section id="how" className="px-5 py-24 md:px-10 md:py-32 lg:px-16"><div className="mx-auto max-w-[1312px]"><div className="flex items-end justify-between border-b border-border pb-8"><div><p className="text-[10px] font-extrabold uppercase tracking-[0.36em] text-primary">The methodology</p><h2 className="mt-4 font-serif text-5xl font-medium sm:text-6xl">Three steps. That's it.</h2></div><span className="hidden text-[9px] font-bold uppercase tracking-[0.24em] text-muted-foreground md:block">Phase 01 — 03</span></div><div className="grid border-x border-b border-border md:grid-cols-3">{[["01", "Upload", "Give us your manuscript.", "DOCX or PDF. Your words stay exactly as you wrote them."], ["02", "Choose", "Choose the visual language of your book.", "Classic, Modern, Philosophy, Academic, or Literary."], ["03", "Download", "Receive the finished interior.", "Racana typesets every page and prepares the final PDF for print."]].map(([n,t,b,s],i) => <article key={n} className={`group flex min-h-80 flex-col justify-between p-8 transition-colors hover:bg-paper ${i ? "border-t border-border md:border-l md:border-t-0" : ""}`}><div className="flex items-start justify-between"><span className="font-serif text-4xl italic text-primary">{n}</span><span className="size-2 scale-0 rounded-full bg-foreground transition-transform group-hover:scale-100" /></div><div><h3 className="text-xs font-extrabold uppercase tracking-[0.2em]">{t}</h3><p className="mt-5 font-medium">{b}</p><p className="mt-2 max-w-xs text-sm font-light leading-6 text-muted-foreground">{s}</p></div></article>)}</div><p className="mt-7 text-xs uppercase tracking-[0.12em] text-muted-foreground">The whole process usually takes about two minutes.</p></div></section>
     <section id="styles" className="bg-forest px-5 py-24 text-forest-foreground md:px-10 md:py-32 lg:px-16"><div className="mx-auto max-w-[1312px]"><div className="flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">Five book styles</p><h2 className="mt-4 max-w-2xl font-serif text-5xl sm:text-6xl">Five ways to give your book form.</h2></div><p className="max-w-sm text-sm leading-6 text-forest-foreground/70">Every book has a different voice. Choose the typography that belongs with yours.</p></div><div className="mt-16 grid gap-px bg-forest-foreground/20 sm:grid-cols-2 lg:grid-cols-5">{bookStyles.map((s) => <article key={s.name} className="group bg-forest p-5"><div className="aspect-[3/4] bg-paper p-5 text-foreground shadow-page transition-transform duration-500 group-hover:-translate-y-2"><div className="flex justify-between border-b border-rule/50 pb-2 text-[6px] uppercase tracking-[0.18em] text-muted-foreground"><span>Racana</span><span>{s.numeral}</span></div><div className="flex h-[85%] flex-col items-center justify-center text-center"><span className="text-[6px] uppercase tracking-[0.25em] text-primary">Chapter One</span><h3 className={`mt-3 text-2xl leading-none ${s.type}`}>A Room<br />of Words</h3><div className="mt-4 h-px w-7 bg-primary" /><p className={`mt-5 text-[7px] leading-relaxed text-ink-soft ${s.type}`}>A book begins long before its first page is turned.</p></div></div><p className="mt-6 font-serif text-2xl">{s.name}</p><p className="mt-1 text-xs text-forest-foreground/80">{s.mood}</p><p className="mt-4 min-h-10 text-[11px] leading-5 text-forest-foreground/55">{s.use}</p><a href="/upload" className="mt-5 inline-flex items-center gap-2 text-xs font-semibold text-accent">Preview {s.name} <ArrowRight className="size-3" /></a></article>)}</div></div></section>
     <BeforeAfter />
     <Promise />
@@ -64,7 +91,7 @@ function Index() {
     <Pricing />
     <Faq />
     <section className="border-t border-border px-5 py-24 text-center md:py-32"><div className="mx-auto max-w-3xl"><h2 className="font-serif text-5xl leading-tight sm:text-7xl">Your book is already written.<br /><span className="italic text-primary">Now give it a finished interior.</span></h2><div className="mt-10"><PrimaryLink>Start your book</PrimaryLink></div><p className="mt-5 text-xs text-muted-foreground">Free preview · $29 when you're ready</p></div></section>
-    <Footer />
+    <Footer /><MobileAction />
   </main>;
 }
 
